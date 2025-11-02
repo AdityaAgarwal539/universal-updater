@@ -37,6 +37,16 @@ Then, run it. The script requires `sudo` privileges for most package manager ope
 ./updater.sh
 ```
 
+### 2. Remote Execution (via curl)
+
+You can also execute the script directly from GitHub using `curl`. This method requires `sudo` to be included in the command itself.
+
+**Note:** Replace `YOUR_GITHUB_USERNAME` and `YOUR_REPOSITORY_NAME` with your actual GitHub username and repository name.
+
+```bash
+curl -sSL https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_REPOSITORY_NAME/main/updater.sh | sudo bash
+```
+
 The script will automatically detect your operating system (Linux or macOS) and the available package managers, then proceed with the updates.
 
 ## Contributing
