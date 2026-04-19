@@ -149,11 +149,7 @@ main() {
     update_macos
     else # Assume Linux
     # System and application updates
-    update_apt
-    update_snap
-    update_flatpak
-
-    # Prefer AUR helpers (paru -> yay); fall back to pacman
+    # Prefers AUR helpers (paru then yay); falls back to pacman
     if command -v paru &>/dev/null; then
       update_paru
     elif command -v yay &>/dev/null; then
@@ -161,7 +157,9 @@ main() {
     else
       update_pacman
     fi
-
+    update_apt
+    update_snap
+    update_flatpak
     update_dnf
     update_yum
     update_zypper
