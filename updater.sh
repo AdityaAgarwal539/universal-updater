@@ -35,7 +35,7 @@ update_flatpak() {
   fi
 }
 
-# PACMAN (Arch Linux)
+# PACMAN (Arch Linux)- if AUR helper is absent
 update_pacman() {
   if command -v pacman &>/dev/null; then
     print_message "Updating PACMAN packages..."
@@ -57,6 +57,22 @@ update_yay() {
     fi
   fi
 }
+
+# PARU (Arch Linux - AUR)
+update_paru() {
+  if command -v paru &>/dev/null; then
+    if [[ -n "$SUDO_USER" && "$EUID" -eq 0 ]]; then
+      print_message "Updating AUR packages with PARU (as $SUDO_USER)..."
+      sudo -u "$SUDO_USER" paru -Syu --noconfirm
+    elif [[ "$EUID" -ne 0 ]]; then
+      print_message "Updating AUR packages with PARU..."
+      paru -Syu --noconfirm
+    else
+      print_message "Skipping PARU (cannot determine user context)..."
+    fi
+  fi
+}
+
 
 # DNF (Fedora/RHEL)
 update_dnf() {
@@ -98,22 +114,6 @@ update_apk() {
     sudo apk update && sudo apk upgrade
   fi
 }
-
-# PARU (Arch Linux - AUR)
-update_paru() {
-  if command -v paru &>/dev/null; then
-    if [[ -n "$SUDO_USER" && "$EUID" -eq 0 ]]; then
-      print_message "Updating AUR packages with PARU (as $SUDO_USER)..."
-      sudo -u "$SUDO_USER" paru -Syu --noconfirm
-    elif [[ "$EUID" -ne 0 ]]; then
-      print_message "Updating AUR packages with PARU..."
-      paru -Syu --noconfirm
-    else
-      print_message "Skipping PARU (cannot determine user context)..."
-    fi
-  fi
-}
-
 # --- Firmware Update ---
 
 # FWUPD (Linux Vendor Firmware Service)
@@ -147,14 +147,21 @@ main() {
 
   if [[ "$(uname)" == "Darwin" ]]; then
     update_macos
-  else # Assume Linux
+    else # Assume Linux
     # System and application updates
     update_apt
     update_snap
     update_flatpak
-    update_pacman
-    update_yay
-    update_paru
+
+    # Prefer AUR helpers (paru -> yay); fall back to pacman
+    if command -v paru &>/dev/null; then
+      update_paru
+    elif command -v yay &>/dev/null; then
+      update_yay
+    else
+      update_pacman
+    fi
+
     update_dnf
     update_yum
     update_zypper
@@ -164,6 +171,7 @@ main() {
     # Firmware updates
     update_firmware
   fi
+
 
   print_message "System update complete!"
 }
