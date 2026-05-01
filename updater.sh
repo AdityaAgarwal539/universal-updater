@@ -9,6 +9,25 @@ print_message() {
   echo "----------------------------------------"
 }
 
+# Create Timeshift snapshot if available
+create_timeshift_snapshot(){
+  command -v timeshift &>/dev/null || return 1
+  print_message "Timeshift detected."
+  read -rp "Create Timeshift snapshot before upgrading? [Y/n]: " ans
+  ans=${ans:-Y}
+  if [[ "$ans" =~ ^[Yy] ]]; then
+    print_message "Creating Timeshift snapshot..."
+    if [[ "$EUID" -eq 0 ]]; then
+      timeshift --create --comments "Pre-upgrade snapshot" --tags D
+    else
+      sudo timeshift --create --comments "Pre-upgrade snapshot" --tags D
+    fi
+    return $?
+  fi
+  print_message "Skipping Timeshift snapshot as requested."
+  return 0
+}
+
 # --- Update and Upgrade Functions ---
 
 # APT (Debian/Ubuntu)
@@ -147,7 +166,10 @@ main() {
 
   if [[ "$(uname)" == "Darwin" ]]; then
     update_macos
-    else # Assume Linux
+  else # Assume Linux
+    # Create Timeshift snapshot (non-blocking if timeshift not installed)
+    create_timeshift_snapshot || true
+
     # System and application updates
     # Prefers AUR helpers (paru then yay); falls back to pacman
     if command -v paru &>/dev/null; then
